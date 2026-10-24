@@ -41,9 +41,24 @@ The checked-in `render.yaml` configures the following:
 | `ACCESS_TOKEN_MINUTES` | `30` |
 | `AUTH_USERS_FILE` | `/var/data/users.json` |
 | `SMART_CAMPUS_DATA_DIR` | `/var/data` |
+| `AUTH_BOOTSTRAP_ADMIN_USERNAME` | Optional initial Super Admin username; set privately for first account creation |
+| `AUTH_BOOTSTRAP_ADMIN_PASSWORD` | Optional initial Super Admin password (12-256 characters); set privately with the username |
 | `CORS_ORIGINS` | Required; exact frontend origin(s), comma-separated |
 | `IMPORT_MAX_UPLOAD_MB` | `10` |
 | `IMPORT_MAX_ROWS` | `20000` |
+
+### First Super Admin without Render Shell
+
+If your Render plan does not include Shell access, use the private environment settings to create the first administrator:
+
+1. In Render, open the backend service and go to **Environment**.
+2. Add `AUTH_BOOTSTRAP_ADMIN_USERNAME` with your chosen username.
+3. Add `AUTH_BOOTSTRAP_ADMIN_PASSWORD` with a new, unique password of at least 12 characters. Do not reuse a password shared in chat or used on another account.
+4. Save the environment changes and allow Render to redeploy the service. On startup, the API creates this Super Admin only when no Super Admin exists. The password is hashed in the account store, and the account is required to change it after its first login.
+5. Sign in on the Vercel site with those credentials and complete the password-change prompt.
+6. Remove both bootstrap variables from Render after confirming the account works. These variables never reset or overwrite an existing Super Admin.
+
+This is suitable for initial/demo provisioning, not durable production identity management. Render Free has no persistent disk; account and institution CSV files on its ephemeral filesystem can disappear on a deploy or instance replacement. Removing the bootstrap variables means the account cannot be recreated automatically if that happens. Keeping a plaintext bootstrap password in provider environment settings can recreate access after a data reset, but increases the risk if those settings are exposed. For a lasting deployment, use persistent storage and remove the bootstrap variables after initial setup.
 
 Optional AI assistant variables (only set these in Render if enabling Groq):
 
@@ -63,9 +78,9 @@ Optional storage overrides should keep both `AUTH_USERS_FILE` and `SMART_CAMPUS_
 
 No private API key belongs on Vercel. If using Vercel Preview deployments against the production backend, add each approved preview origin to Render `CORS_ORIGINS`; avoid allowing arbitrary preview origins.
 
-## Create the first platform administrator
+## Create the first platform administrator with Render Shell
 
-After the Render service is running, open its Shell and run:
+If your plan includes Shell access, you can instead run this after the Render service is running:
 
 ```sh
 python scripts/saas_admin.py bootstrap-super-admin --username YOUR_ADMIN_USERNAME

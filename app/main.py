@@ -50,6 +50,21 @@ def _production_secret_is_usable(secret: str) -> bool:
     )
 
 
+def _bootstrap_super_admin_from_environment() -> None:
+    username = os.getenv("AUTH_BOOTSTRAP_ADMIN_USERNAME", "").strip()
+    password = os.getenv("AUTH_BOOTSTRAP_ADMIN_PASSWORD", "")
+    if not username and not password:
+        return
+    if not username or not password:
+        raise RuntimeError(
+            "Set both AUTH_BOOTSTRAP_ADMIN_USERNAME and AUTH_BOOTSTRAP_ADMIN_PASSWORD, or remove both."
+        )
+    if auth.bootstrap_super_admin(username, password):
+        logger.info("Created the initial Super Admin from private environment configuration.")
+    else:
+        logger.info("Initial Super Admin already exists; environment bootstrap did not change accounts.")
+
+
 def create_app(data_dir: str | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -62,6 +77,7 @@ def create_app(data_dir: str | None = None) -> FastAPI:
         try:
             data_lock = acquire_process_lock(get_data_dir(data_dir) / ".tenant-writer.lock")
             init_auth_store()
+            _bootstrap_super_admin_from_environment()
             app.state.tenants = TenantRegistry(get_data_dir(data_dir))
             yield
         finally:

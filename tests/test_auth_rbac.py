@@ -4,7 +4,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 from app import auth
-from app.main import _production_secret_is_usable, create_app
+from app.main import _bootstrap_super_admin_from_environment, _production_secret_is_usable, create_app
 from scripts import saas_admin
 from scripts.saas_admin import bootstrap
 
@@ -21,6 +21,32 @@ def test_production_rejects_missing_placeholder_or_short_auth_secret(secret):
 
 def test_production_accepts_long_configured_auth_secret():
     assert _production_secret_is_usable('a' * 48)
+
+
+def test_private_environment_bootstrap_creates_super_admin_once(monkeypatch, tmp_path):
+    monkeypatch.setattr(auth, 'USERS_FILE', tmp_path / 'users.json')
+    monkeypatch.setenv('AUTH_BOOTSTRAP_ADMIN_USERNAME', 'demo-owner')
+    monkeypatch.setenv('AUTH_BOOTSTRAP_ADMIN_PASSWORD', PASSWORD)
+
+    _bootstrap_super_admin_from_environment()
+
+    row = auth._read_users()['demo-owner']
+    assert row['role'] == 'super_admin'
+    assert row['must_change_password'] is True
+    assert auth._verify_password(PASSWORD, row['password_hash'])
+
+    monkeypatch.setenv('AUTH_BOOTSTRAP_ADMIN_PASSWORD', 'Different-test-password-2026!')
+    _bootstrap_super_admin_from_environment()
+    row_after_restart = auth._read_users()['demo-owner']
+    assert row_after_restart['password_hash'] == row['password_hash']
+
+
+def test_private_environment_bootstrap_requires_both_values(monkeypatch):
+    monkeypatch.setenv('AUTH_BOOTSTRAP_ADMIN_USERNAME', 'demo-owner')
+    monkeypatch.delenv('AUTH_BOOTSTRAP_ADMIN_PASSWORD', raising=False)
+
+    with pytest.raises(RuntimeError, match='Set both AUTH_BOOTSTRAP_ADMIN_USERNAME'):
+        _bootstrap_super_admin_from_environment()
 
 def login(client, username, password=PASSWORD):
     r = client.post('/api/auth/login', data={'username': username, 'password': password})

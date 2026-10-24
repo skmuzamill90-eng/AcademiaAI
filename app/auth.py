@@ -88,9 +88,22 @@ def audit(data, actor, action, target):
 
 
 def init_auth_store():
-    # Provisioning is deliberately CLI-only, never on startup.
+    # Ensure the file exists; optional first-admin bootstrap is handled separately.
     with transaction() as data:
         pass
+
+
+def bootstrap_super_admin(username: str, password: str) -> bool:
+    """Create the initial Super Admin only when no Super Admin exists."""
+    with transaction() as data:
+        if any(user.get("role") == "super_admin" for user in data["users"].values()):
+            return False
+        if username in data["users"]:
+            raise ValueError("Bootstrap username already belongs to another account.")
+        row = new_user(username, password, "super_admin", must_change=True)
+        data["users"][username] = row
+        audit(data, "environment-bootstrap", "super_admin_bootstrapped", username)
+    return True
 
 
 def public_user(row):

@@ -43,13 +43,15 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 
 Copy the generated value into `AUTH_SECRET_KEY` in your `.env` file. Keep this secret private.
 
-Create the first Super Admin while the API is stopped:
+For local development, create the first Super Admin while the API is stopped:
 
 ```powershell
 python scripts/saas_admin.py bootstrap-super-admin --username skmuzamill
 ```
 
 Follow the script's prompts to complete setup.
+
+For Render without Shell access, set `AUTH_BOOTSTRAP_ADMIN_USERNAME` and `AUTH_BOOTSTRAP_ADMIN_PASSWORD` as private service environment variables. The API creates the first Super Admin on startup if none exists; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Do not commit a real password.
 
 Start the API:
 
