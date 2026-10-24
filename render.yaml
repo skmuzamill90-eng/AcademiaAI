@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: academia-ai-api
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    disk:
+      name: academia-ai-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTH_SECRET_KEY
+        generateValue: true
+      - key: ACCESS_TOKEN_MINUTES
+        value: 30
+      - key: AUTH_USERS_FILE
+        value: /var/data/users.json
+      - key: SMART_CAMPUS_DATA_DIR
+        value: /var/data
+      - key: CORS_ORIGINS
+        sync: false
+      - key: IMPORT_MAX_UPLOAD_MB
+        value: 10
+      - key: IMPORT_MAX_ROWS
+        value: 20000

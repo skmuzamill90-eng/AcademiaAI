@@ -1,0 +1,42 @@
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+frontend/node_modules/
+frontend/dist/
+data/users.json
+data/*.tmp
+# Student-level records may contain personal data; provision approved data privately.
+data/*.csv
+data/**/*.csv
+
+data/.tenant-writer.lock
+
+data/*.lock
+
+# Private application data
+data/tenants/
+data/users.json*
+data/users.lock*
+data/*.lock
+data/*.lock.*
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Build and cache
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
+dist/
+.pytest_cache/
